@@ -1,0 +1,7 @@
+{
+  "name": "Fejay Tech Booking",
+  "description": "Premium mobile phone rental system for events featuring a modern Tech Blue theme, real-time queue checking, and secure booking.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
