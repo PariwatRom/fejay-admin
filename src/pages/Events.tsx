@@ -54,7 +54,7 @@ const Events: React.FC<EventsProps> = ({ onSelect }) => {
                 key={slide.id}
                 className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
               >
-                  <img src={slide.img} alt="" className="w-full h-full object-cover" />
+                  <img src={slide.img} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   <div className="absolute inset-0 bg-gradient-to-t from-midnight/95 via-midnight/30 to-transparent flex flex-col justify-end p-6">
                       <h3 className="text-white font-black text-2xl leading-tight tracking-tight uppercase">{slide.title}</h3>
                       <p className="text-white/70 text-[10px] font-black uppercase tracking-[0.2em] mt-2">{slide.subtitle}</p>
@@ -100,11 +100,13 @@ const Events: React.FC<EventsProps> = ({ onSelect }) => {
                             className={`group flex flex-col bg-white rounded-xl overflow-hidden shadow-sm transition-all ${ev.soldOut ? 'cursor-not-allowed opacity-80' : 'cursor-pointer hover:shadow-md active:scale-[0.98]'}`}
                         >
                             {/* Image Section */}
-                            <div className="aspect-square w-full relative overflow-hidden">
+                            <div className="aspect-[3/4] w-full relative overflow-hidden bg-slate-100">
                                 <img 
                                     src={ev.image} 
                                     alt={ev.name} 
                                     className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${ev.soldOut ? 'grayscale contrast-75' : ''}`} 
+                                    referrerPolicy="no-referrer"
+                                    loading="lazy"
                                 />
                                 {ev.soldOut && (
                                     <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40">

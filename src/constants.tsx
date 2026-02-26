@@ -76,7 +76,9 @@ export const EVENTS: Event[] = [
     date: 'ศุกร์ 13 กุมภาพันธ์ 2569 17.00', 
     location: 'Impact Arena', 
     monthGroup: 'February 2026',
-    image: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&q=80&w=300&h=450',
+    image: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&q=80&w=600',
+    stock: { s24u: 20, i15pm: 20 },
+    booked: { s24u: 20, i15pm: 20 },
     soldOut: true
   },
   { 
@@ -85,7 +87,9 @@ export const EVENTS: Event[] = [
     date: 'เสาร์ 14 กุมภาพันธ์ 2569 18.00', 
     location: 'Rajamangala Stadium', 
     monthGroup: 'February 2026',
-    image: 'https://images.unsplash.com/photo-1459749411177-042180ce673c?auto=format&fit=crop&q=80&w=300&h=450' 
+    image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=600',
+    stock: { s24u: 20, i15pm: 20 },
+    booked: { s24u: 5, i15pm: 8 }
   },
   { 
     id: 'EV-FEB-03', 
@@ -93,7 +97,9 @@ export const EVENTS: Event[] = [
     date: 'เสาร์ 14 กุมภาพันธ์ 2569 17.00', 
     location: 'Impact Arena', 
     monthGroup: 'February 2026',
-    image: 'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?auto=format&fit=crop&q=80&w=300&h=450' 
+    image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=600',
+    stock: { s24u: 20, i15pm: 20 },
+    booked: { s24u: 10, i15pm: 12 }
   },
   { 
     id: 'EV-FEB-04', 
@@ -101,7 +107,9 @@ export const EVENTS: Event[] = [
     date: 'เสาร์ 21 กุมภาพันธ์ 2569 TBA', 
     location: 'Union Hall', 
     monthGroup: 'February 2026',
-    image: 'https://images.unsplash.com/photo-1493225255756-d9584f8606e9?auto=format&fit=crop&q=80&w=300&h=450',
+    image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=600',
+    stock: { s24u: 20, i15pm: 20 },
+    booked: { s24u: 20, i15pm: 20 },
     soldOut: true
   },
   { 
@@ -110,7 +118,9 @@ export const EVENTS: Event[] = [
     date: 'อาทิตย์ 22 กุมภาพันธ์ 2569 TBA', 
     location: 'Union Hall', 
     monthGroup: 'February 2026',
-    image: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&q=80&w=300&h=450' 
+    image: 'https://images.unsplash.com/photo-1514525253361-bee8718a7439?auto=format&fit=crop&q=80&w=600',
+    stock: { s24u: 20, i15pm: 20 },
+    booked: { s24u: 15, i15pm: 18 }
   },
   { 
     id: 'EV-FEB-06', 
@@ -118,7 +128,9 @@ export const EVENTS: Event[] = [
     date: 'เสาร์ 28 กุมภาพันธ์ 2569 TBA', 
     location: 'QSNCC', 
     monthGroup: 'February 2026',
-    image: 'https://images.unsplash.com/photo-1514525253361-bee8a187499b?auto=format&fit=crop&q=80&w=300&h=450' 
+    image: 'https://images.unsplash.com/photo-1459749411177-042180ce673c?auto=format&fit=crop&q=80&w=600',
+    stock: { s24u: 20, i15pm: 20 },
+    booked: { s24u: 2, i15pm: 4 }
   },
   { 
     id: 'EV-MAR-01', 
@@ -126,7 +138,9 @@ export const EVENTS: Event[] = [
     date: 'อาทิตย์ 1 มีนาคม 2569 19.00', 
     location: 'QSNCC', 
     monthGroup: 'March 2026',
-    image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=300&h=450' 
+    image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=600',
+    stock: { s24u: 20, i15pm: 20 },
+    booked: { s24u: 0, i15pm: 0 }
   },
   { 
     id: 'EV-MAR-02', 
@@ -134,7 +148,9 @@ export const EVENTS: Event[] = [
     date: 'อาทิตย์ 1 มีนาคม 2569 17.00', 
     location: 'Thunder Dome', 
     monthGroup: 'March 2026',
-    image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=300&h=450' 
+    image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=600',
+    stock: { s24u: 20, i15pm: 20 },
+    booked: { s24u: 0, i15pm: 0 }
   },
   { 
     id: 'EV-MAR-03', 
@@ -142,7 +158,9 @@ export const EVENTS: Event[] = [
     date: 'เสาร์ 7 มีนาคม 2569 18.30', 
     location: 'National Stadium', 
     monthGroup: 'March 2026',
-    image: 'https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?auto=format&fit=crop&q=80&w=300&h=450' 
+    image: 'https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?auto=format&fit=crop&q=80&w=600',
+    stock: { s24u: 20, i15pm: 20 },
+    booked: { s24u: 0, i15pm: 0 }
   },
   { 
     id: 'EV-MAR-04', 
@@ -150,7 +168,9 @@ export const EVENTS: Event[] = [
     date: 'อาทิตย์ 8 มีนาคม 2569 18.30', 
     location: 'National Stadium', 
     monthGroup: 'March 2026',
-    image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&q=80&w=300&h=450' 
+    image: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&q=80&w=600',
+    stock: { s24u: 20, i15pm: 20 },
+    booked: { s24u: 0, i15pm: 0 }
   },
   { 
     id: 'EV-MAR-05', 
@@ -158,7 +178,9 @@ export const EVENTS: Event[] = [
     date: 'ศุกร์ 13 มีนาคม 2569 TBA', 
     location: 'Impact Arena', 
     monthGroup: 'March 2026',
-    image: 'https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&q=80&w=300&h=450' 
+    image: 'https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&q=80&w=600',
+    stock: { s24u: 20, i15pm: 20 },
+    booked: { s24u: 0, i15pm: 0 }
   },
   { 
     id: 'EV-MAR-06', 
@@ -166,6 +188,8 @@ export const EVENTS: Event[] = [
     date: 'เสาร์ 14 มีนาคม 2569 18.30', 
     location: 'Rajamangala Stadium', 
     monthGroup: 'March 2026',
-    image: 'https://images.unsplash.com/photo-1516280440614-6697288d5d38?auto=format&fit=crop&q=80&w=300&h=450' 
+    image: 'https://images.unsplash.com/photo-1516280440614-6697288d5d38?auto=format&fit=crop&q=80&w=600',
+    stock: { s24u: 20, i15pm: 20 },
+    booked: { s24u: 0, i15pm: 0 }
   }
 ];

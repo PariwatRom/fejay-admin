@@ -1,477 +1,422 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { apiGetBookingStatus } from '../mockApi';
-import { BookingResponse, Event } from '../types';
-import { EVENTS } from '../constants';
-import QueueDetail from './QueueDetail';
+import React, { useState, useEffect } from 'react';
+import { BookingResponse, Booking, Event } from '../types';
+import { QrCode, Clock, CheckCircle2, AlertCircle, Smartphone, Users, List, Search, ChevronRight, Calendar, MapPin, ChevronLeft } from 'lucide-react';
 
-const CheckQueue: React.FC = () => {
-  const [viewMode, setViewMode] = useState<'LIST' | 'SEARCH' | 'EVENTS'>('LIST');
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
-  const [myTickets, setMyTickets] = useState<BookingResponse[]>([]);
-  const [isScanMode, setIsScanMode] = useState(false);
-  const [code, setCode] = useState('');
-  const [result, setResult] = useState<BookingResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraError, setCameraError] = useState('');
+interface CheckQueueProps {
+  bookings: Booking[];
+  events: Event[];
+}
 
-  useEffect(() => {
-    if (viewMode === 'LIST') {
-        const saved = localStorage.getItem('fejay_my_tickets');
-        if (saved) {
-            try {
-                setMyTickets(JSON.parse(saved));
-            } catch (e) {
-                console.error("Error loading tickets", e);
-            }
-        }
-    }
-  }, [viewMode]);
+interface DeviceUnitStatus {
+  id: string;
+  unitNo: string;
+  status: 'AVAILABLE' | 'BOOKED' | 'IN_USE';
+  bookedBy?: string;
+}
+
+interface DeviceCategory {
+  name: string;
+  icon: string;
+  units: DeviceUnitStatus[];
+}
+
+const CheckQueue: React.FC<CheckQueueProps> = ({ bookings, events }) => {
+  const [tickets, setTickets] = useState<BookingResponse[]>([]);
+  const [activeTab, setActiveTab] = useState<'TICKETS' | 'EVENTS'>('TICKETS');
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
-    let stream: MediaStream | null = null;
-
-    async function startCamera() {
-        setCameraError('');
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { 
-                    facingMode: 'environment',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                } 
-            });
-        } catch (err) {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            } catch (err2) {
-                setCameraError('ไม่สามารถเข้าถึงกล้องได้');
-                setCameraActive(false);
-                return;
-            }
-        }
-
-        if (videoRef.current && stream) {
-            videoRef.current.srcObject = stream;
-            videoRef.current.onloadedmetadata = () => {
-                videoRef.current?.play().catch(e => console.error("Play error", e));
-                setCameraActive(true);
-            };
-        }
+    const savedTickets = localStorage.getItem('fejay_my_tickets');
+    if (savedTickets) {
+      setTickets(JSON.parse(savedTickets));
     }
+  }, []);
 
-    function stopCamera() {
-        if (videoRef.current && videoRef.current.srcObject) {
-            const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
-            tracks.forEach(track => track.stop());
-            videoRef.current.srcObject = null;
-            setCameraActive(false);
-        }
-    }
+  const getSelectedEvent = () => events.find(e => e.id === selectedEventId);
+  const getSelectedTicket = () => tickets.find(t => t.bookingId === selectedTicketId);
 
-    if (viewMode === 'SEARCH' && isScanMode && !result) {
-        startCamera();
-    } else {
-        stopCamera();
-    }
-
-    return () => {
-        stopCamera();
-    };
-  }, [viewMode, isScanMode, result]);
-
-  const handleSearch = async (searchCode: string) => {
-    if (!searchCode) return;
-    setLoading(true);
-    setError('');
-    setResult(null);
-
-    setTimeout(async () => {
-        const res = await apiGetBookingStatus(searchCode.toUpperCase());
-        setLoading(false);
-        
-        if (res) {
-            setResult(res);
-        } else {
-            setError('ไม่พบข้อมูลการจองนี้');
-        }
-    }, 1500);
-  };
-
-  const handleMockScan = () => {
-    handleSearch('BK-123456');
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-        setIsScanMode(false);
-        setCameraActive(false);
-        setLoading(true);
-        setTimeout(() => {
-             handleSearch('BK-123456'); 
-        }, 1000);
-    }
-  };
-
-  const triggerFileUpload = () => {
-    fileInputRef.current?.click();
-  };
-
-  const resetSearch = () => {
-    setResult(null);
-    setCode('');
-    setError('');
-    setIsScanMode(false);
-  };
-
-  const TicketCard: React.FC<{ item: BookingResponse }> = ({ item }) => (
-    <div className="bg-white p-6 rounded-[32px] shadow-xl shadow-indigo-900/5 border border-slate-100 relative overflow-hidden animate-slideUp">
-        <div className="absolute top-0 right-0 bg-indigo-50 text-primary text-[8px] font-black px-4 py-2 rounded-bl-2xl uppercase tracking-[0.2em] border-l border-b border-indigo-100">
-            {item.status.replace('_', ' ')}
-        </div>
-        
-        <div className="flex items-start mb-5">
-            <div className={`w-14 h-14 rounded-[20px] flex items-center justify-center text-2xl shadow-sm mr-4 ${item.status === 'PAID' ? 'bg-emerald-50 text-tech-success border border-emerald-100' : 'bg-amber-50 text-tech-warning border border-amber-100'}`}>
-                {item.status === 'PAID' ? '✓' : '⏳'}
-            </div>
-            <div>
-                <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-0.5">BOOKING ID</p>
-                <p className="text-xl font-black text-midnight tracking-tight">{item.bookingId}</p>
-            </div>
-        </div>
-
-        <div className="bg-slate-50 rounded-[24px] p-5 space-y-4 border border-slate-100/50">
-            <div>
-                <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest mb-1.5 opacity-60">EVENT</p>
-                <p className="text-[11px] font-black text-slate-800 line-clamp-1 uppercase tracking-tight">{item.event}</p>
-            </div>
-            <div className="flex justify-between items-end">
-                <div>
-                    <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest mb-1.5 opacity-60">MODEL</p>
-                    <p className="text-[11px] font-black text-slate-800 uppercase tracking-tight">{item.model}</p>
-                </div>
-                <div className="text-right">
-                    <p className="text-[8px] text-slate-400 font-black uppercase tracking-widest mb-1.5 opacity-60">UNIT</p>
-                    <p className="text-lg font-black text-primary tracking-tighter uppercase">UNIT-{item.unit}</p>
-                </div>
-            </div>
-        </div>
-        
-        <div className="mt-5 pt-4 border-t border-slate-100 flex justify-between items-center">
-            <div className="flex flex-col">
-                <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Payment Status</span>
-                {item.remainingAmount > 0 ? (
-                    <span className="text-tech-error font-black text-xs uppercase tracking-tight">Remaining: ฿{item.remainingAmount.toLocaleString()}</span>
-                ) : (
-                    <span className="text-tech-success font-black text-xs uppercase tracking-tight">Fully Paid</span>
-                )}
-            </div>
-            <button className="bg-midnight text-white text-[9px] font-black px-4 py-2 rounded-xl uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-midnight/10">
-                View Ticket
-            </button>
-        </div>
-    </div>
+  const filteredTickets = tickets.filter(t => 
+    t.bookingId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t.event.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (selectedEvent) {
-    return <QueueDetail event={selectedEvent} onBack={() => setSelectedEvent(null)} />;
-  }
+  const filteredEvents = events.filter(e => 
+    e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.location.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  return (
-    <div className="animate-fadeIn pb-24 pt-2 space-y-8">
-      
-      <div className="px-4 flex justify-between items-start">
-         <div className="flex-1">
-             <h2 className="text-2xl font-black text-midnight tracking-tight uppercase">
-                 {viewMode === 'LIST' ? 'My Tickets' : viewMode === 'SEARCH' ? 'Search Booking' : 'Check Queue'}
-             </h2>
-             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-                 {viewMode === 'LIST' ? 'Your active rental records' : viewMode === 'SEARCH' ? 'Find by ID or QR Code' : 'Real-time device availability'}
-             </p>
-         </div>
-         <button 
-            onClick={() => {
-                if (viewMode === 'SEARCH') {
-                    setViewMode('LIST');
-                } else {
-                    setViewMode('SEARCH');
-                }
-            }}
-            className={`w-14 h-14 rounded-[20px] flex items-center justify-center text-xl shadow-xl transition-all active:scale-95 ${viewMode === 'SEARCH' ? 'bg-midnight text-white shadow-midnight/20' : 'bg-white text-slate-600 border border-slate-100 shadow-indigo-900/5 hover:border-primary/20'}`}
-         >
-            {viewMode === 'SEARCH' ? '✕' : '🔍'}
-         </button>
-      </div>
+  const mockDeviceCategories: DeviceCategory[] = [
+    {
+      name: 'SAMSUNG GALAXY S23 ULTRA',
+      icon: '🔭',
+      units: [
+        { id: '1', unitNo: 'S23U #1', status: 'BOOKED', bookedBy: 'UAU' },
+        { id: '2', unitNo: 'S23U #2', status: 'BOOKED', bookedBy: 'IUI' },
+        { id: '3', unitNo: 'S23U #3', status: 'IN_USE' },
+        { id: '4', unitNo: 'S23U #4', status: 'AVAILABLE' },
+      ]
+    },
+    {
+      name: 'SAMSUNG GALAXY S24 ULTRA',
+      icon: '📷',
+      units: [
+        { id: '5', unitNo: 'S24U #1', status: 'AVAILABLE' },
+        { id: '6', unitNo: 'S24U #2', status: 'AVAILABLE' },
+        { id: '7', unitNo: 'S24U #3', status: 'BOOKED', bookedBy: 'KIF' },
+        { id: '8', unitNo: 'S24U #4', status: 'AVAILABLE' },
+      ]
+    },
+    {
+      name: 'SAMSUNG GALAXY S25 ULTRA',
+      icon: '👑',
+      units: [
+        { id: 's25-1', unitNo: 'S25U #1', status: 'AVAILABLE' },
+        { id: 's25-2', unitNo: 'S25U #2', status: 'BOOKED', bookedBy: 'JIB' },
+        { id: 's25-3', unitNo: 'S25U #3', status: 'AVAILABLE' },
+        { id: 's25-4', unitNo: 'S25U #4', status: 'AVAILABLE' },
+      ]
+    },
+    {
+      name: 'VIVO X200 PRO',
+      icon: '📸',
+      units: [
+        { id: '9', unitNo: 'VX200P #1', status: 'AVAILABLE' },
+        { id: '10', unitNo: 'VX200P #2', status: 'BOOKED', bookedBy: 'SAY' },
+        { id: '11', unitNo: 'VX200P #3', status: 'IN_USE' },
+        { id: '12', unitNo: 'VX200P #4', status: 'AVAILABLE' },
+      ]
+    },
+    {
+      name: 'VIVO X200 ULTRA',
+      icon: '💎',
+      units: [
+        { id: 'vxu-1', unitNo: 'VX200U #1', status: 'AVAILABLE' },
+        { id: 'vxu-2', unitNo: 'VX200U #2', status: 'AVAILABLE' },
+        { id: 'vxu-3', unitNo: 'VX200U #3', status: 'IN_USE' },
+        { id: 'vxu-4', unitNo: 'VX200U #4', status: 'AVAILABLE' },
+      ]
+    }
+  ];
 
-      {viewMode !== 'SEARCH' && (
-        <div className="px-4">
-            <div className="flex bg-white rounded-[24px] p-2 shadow-sm border border-slate-100">
-                <button 
-                    onClick={() => setViewMode('LIST')}
-                    className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] rounded-[18px] transition-all ${viewMode === 'LIST' ? 'bg-midnight text-white shadow-xl shadow-midnight/20' : 'text-slate-400 hover:bg-slate-50'}`}
-                >
-                    Tickets
-                </button>
-                <button 
-                    onClick={() => setViewMode('EVENTS')}
-                    className={`flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] rounded-[18px] transition-all ${viewMode === 'EVENTS' ? 'bg-midnight text-white shadow-xl shadow-midnight/20' : 'text-slate-400 hover:bg-slate-50'}`}
-                >
-                    Events
-                </button>
-            </div>
-        </div>
-      )}
+  const renderMyTickets = () => {
+    if (selectedTicketId) {
+      return renderTicketDetail();
+    }
 
-      {viewMode === 'LIST' && (
-          <div className="px-4 space-y-6">
-              {myTickets.length > 0 ? (
-                  myTickets.map((ticket, idx) => (
-                      <TicketCard key={idx} item={ticket} />
-                  ))
-              ) : (
-                  <div className="text-center py-24 opacity-40">
-                      <p className="text-6xl mb-6">🎫</p>
-                      <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em]">No active tickets</p>
-                      <p className="text-[10px] text-slate-300 mt-3 uppercase tracking-widest">Book a device from the home screen</p>
-                  </div>
-              )}
+    if (tickets.length === 0) {
+      return (
+        <div className="animate-fadeIn flex flex-col items-center justify-center min-h-[40vh] text-center px-6">
+          <div className="w-20 h-20 bg-slate-50 rounded-[32px] flex items-center justify-center text-4xl mb-6">
+            🎫
           </div>
-      )}
+          <h2 className="text-xl font-black text-midnight uppercase tracking-tight">NO ACTIVE TICKETS</h2>
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">BOOK A DEVICE FROM THE HOME SCREEN</p>
+        </div>
+      );
+    }
 
-      {viewMode === 'SEARCH' && (
-          <div className="space-y-8">
-              
-              {!result && (
-                <div className="flex bg-white mx-4 p-2 rounded-full border border-slate-100 shadow-sm relative">
-                    <button 
-                        onClick={() => { setIsScanMode(false); setCameraActive(false); }}
-                        className={`flex-1 py-4 rounded-full text-[10px] font-black uppercase tracking-widest transition-all z-10 ${!isScanMode ? 'text-white' : 'text-slate-400'}`}
-                    >
-                        Enter ID
-                    </button>
-                    <button 
-                        onClick={() => setIsScanMode(true)}
-                        className={`flex-1 py-4 rounded-full text-[10px] font-black uppercase tracking-widest transition-all z-10 ${isScanMode ? 'text-white' : 'text-slate-400'}`}
-                    >
-                        Scan QR
-                    </button>
-                    <div 
-                        className={`absolute top-2 bottom-2 w-[calc(50%-8px)] bg-primary rounded-full transition-transform duration-300 ease-in-out shadow-lg shadow-primary/30 ${isScanMode ? 'translate-x-full left-2' : 'left-2'}`}
-                    ></div>
+    return (
+      <div className="space-y-3 animate-fadeIn">
+        {filteredTickets.map((ticket) => (
+          <button 
+            key={ticket.bookingId} 
+            onClick={() => setSelectedTicketId(ticket.bookingId)}
+            className="w-full bg-white p-5 rounded-3xl shadow-lg shadow-indigo-900/5 border border-slate-100 flex items-center justify-between group active:scale-[0.98] transition-all"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                <Smartphone className="w-6 h-6" />
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">{ticket.bookingId}</p>
+                <h4 className="text-sm font-black text-midnight uppercase tracking-tight">{ticket.model}</h4>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl ${
+                ticket.status === 'PAID' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+              }`}>
+                {ticket.status === 'PAID' ? 'ชำระแล้ว' : 'รอชำระ'}
+              </span>
+              <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-indigo-600 transition-colors" />
+            </div>
+          </button>
+        ))}
+      </div>
+    );
+  };
+
+  const renderTicketDetail = () => {
+    const ticket = getSelectedTicket();
+    if (!ticket) return null;
+
+    return (
+      <div className="animate-fadeIn space-y-6">
+        <button 
+          onClick={() => setSelectedTicketId(null)}
+          className="flex items-center space-x-2 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-indigo-600 transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>BACK TO LIST</span>
+        </button>
+
+        <div className="bg-white rounded-[48px] shadow-2xl shadow-indigo-900/5 border border-slate-100 overflow-hidden">
+          {/* Ticket Header */}
+          <div className="bg-gradient-to-r from-indigo-600 to-violet-600 p-8 text-white">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-[10px] font-black text-indigo-200 uppercase tracking-widest mb-1">Booking ID</p>
+                <h3 className="text-xl font-black tracking-tight">{ticket.bookingId}</h3>
+                <div className="mt-2 flex flex-col space-y-1">
+                  <p className="text-[11px] font-black text-white/90 uppercase tracking-widest flex items-center">
+                    <span className="mr-2">👤</span> {ticket.nickname || 'N/A'}
+                  </p>
+                  <p className="text-[11px] font-black text-white/80 uppercase tracking-widest flex items-center">
+                    <span className="mr-2">📞</span> {ticket.phone || 'N/A'}
+                  </p>
+                </div>
+              </div>
+              <div className="bg-white/20 px-4 py-2 rounded-xl backdrop-blur-md">
+                <span className="text-[10px] font-black uppercase tracking-widest">{ticket.status}</span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Smartphone className="w-4 h-4 text-indigo-200" />
+              <span className="text-sm font-bold">{ticket.model}</span>
+            </div>
+          </div>
+
+          {/* QR Code Section */}
+          <div className="p-10 flex flex-col items-center text-center">
+            <div className="w-48 h-48 bg-slate-50 rounded-[40px] p-6 border-2 border-dashed border-slate-200 flex items-center justify-center relative">
+              <svg viewBox="0 0 100 100" className="w-full h-full text-midnight opacity-80">
+                <rect x="10" y="10" width="20" height="20" fill="currentColor" />
+                <rect x="40" y="10" width="20" height="10" fill="currentColor" />
+                <rect x="70" y="10" width="20" height="20" fill="currentColor" />
+                <rect x="10" y="40" width="10" height="20" fill="currentColor" />
+                <rect x="30" y="40" width="40" height="40" fill="currentColor" />
+                <rect x="80" y="40" width="10" height="10" fill="currentColor" />
+                <rect x="10" y="70" width="20" height="20" fill="currentColor" />
+                <rect x="80" y="70" width="10" height="20" fill="currentColor" />
+              </svg>
+            </div>
+            <p className="mt-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">แสดง QR นี้แก่พนักงาน</p>
+          </div>
+
+          {/* Details Section */}
+          <div className="px-10 pb-10 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-slate-50 p-5 rounded-3xl">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">ยอดชำระแล้ว</p>
+                <p className="text-lg font-black text-emerald-600">฿{ticket.paidAmount.toLocaleString()}</p>
+              </div>
+              <div className="bg-slate-50 p-5 rounded-3xl">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">ยอดค้างชำระ</p>
+                <p className="text-lg font-black text-rose-500">฿{ticket.remainingAmount.toLocaleString()}</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-6 rounded-3xl">
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">รายละเอียดอีเวนต์</p>
+                <MapPin className="w-4 h-4 text-slate-300" />
+              </div>
+              <p className="text-sm font-black text-midnight">{ticket.event}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderEventsTab = () => {
+    if (selectedEventId) {
+      return renderEventDetail();
+    }
+
+    return (
+      <div className="grid grid-cols-3 gap-3 animate-fadeIn">
+        {filteredEvents.map((event) => (
+          <button 
+            key={event.id}
+            onClick={() => setSelectedEventId(event.id)}
+            className="group relative bg-white rounded-[24px] overflow-hidden shadow-lg shadow-indigo-900/5 border border-slate-100 text-left transition-all active:scale-95"
+          >
+            <div className="aspect-[3/4] relative overflow-hidden bg-slate-100">
+              <img 
+                src={event.image} 
+                alt={event.name}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                referrerPolicy="no-referrer"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              {event.soldOut && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-rose-500/90 text-white text-[7px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest transform -rotate-12 shadow-lg">
+                    SOLD OUT
+                  </div>
                 </div>
               )}
-
-              {!isScanMode && !result && !loading && (
-                  <div className="bg-white p-10 mx-4 rounded-[44px] shadow-2xl shadow-indigo-900/5 border border-slate-100 animate-slideUp">
-                    <div className="text-center mb-10">
-                        <div className="w-20 h-20 bg-indigo-50 text-primary rounded-[28px] flex items-center justify-center text-4xl mx-auto mb-6 shadow-inner border border-indigo-100/50">⌨️</div>
-                        <h3 className="text-base font-black text-midnight uppercase tracking-widest">Enter Booking ID</h3>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-2">Found in your confirmation screen</p>
-                    </div>
-                    
-                    <input 
-                    type="text" 
-                    placeholder="e.g. FJ1234" 
-                    className="w-full bg-slate-50 border-none rounded-[24px] p-6 text-center text-2xl font-black placeholder:text-slate-200 focus:ring-2 ring-primary/30 outline-none transition-all uppercase tracking-[0.3em] mb-8 shadow-inner"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    />
-
-                    <button 
-                    onClick={() => handleSearch(code)}
-                    disabled={loading || !code}
-                    className={`w-full py-6 rounded-[28px] font-black text-sm uppercase tracking-[0.2em] shadow-xl transition-all border-b-4 ${loading || !code ? 'bg-slate-100 text-slate-300 border-slate-200' : 'bg-midnight text-white border-indigo-900 active:scale-95 shadow-midnight/20'}`}
-                    >
-                    {loading ? 'Searching...' : 'Check Status'}
-                    </button>
-                    
-                    {error && <p className="text-[10px] text-tech-error font-black mt-8 text-center bg-red-50 py-4 rounded-[24px] uppercase tracking-widest border border-red-100">{error}</p>}
-                  </div>
-              )}
-
-              {isScanMode && !result && (
-                  <div className="flex flex-col items-center space-y-8 animate-slideIn px-4">
-                     <div className="relative w-full aspect-square bg-midnight rounded-[48px] overflow-hidden shadow-2xl border-4 border-white">
-                        {cameraError ? (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-white/50 space-y-6 p-10 text-center">
-                                <span className="text-5xl">⚠️</span>
-                                <span className="text-[11px] font-black uppercase tracking-widest leading-relaxed">{cameraError}</span>
-                                <button 
-                                    onClick={triggerFileUpload}
-                                    className="px-8 py-4 bg-white/10 rounded-full text-white text-[10px] font-black uppercase tracking-widest border border-white/20 backdrop-blur-md active:scale-95 transition-all"
-                                >
-                                    Upload Photo
-                                </button>
-                            </div>
-                        ) : cameraActive ? (
-                            <>
-                                <video 
-                                    ref={videoRef} 
-                                    autoPlay 
-                                    playsInline 
-                                    muted
-                                    onClick={handleMockScan} 
-                                    className="w-full h-full object-cover opacity-80"
-                                />
-                                
-                                <div className="absolute inset-0 border-[60px] border-midnight/40 pointer-events-none"></div>
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                    <div className="w-64 h-64 border-2 border-white/30 rounded-[40px] relative">
-                                        <div className="absolute left-0 right-0 h-0.5 bg-primary shadow-[0_0_20px_rgba(79,70,229,1)] animate-scanLine top-0"></div>
-                                        {/* Corner Accents */}
-                                        <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-primary rounded-tl-2xl"></div>
-                                        <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-primary rounded-tr-2xl"></div>
-                                        <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-primary rounded-bl-2xl"></div>
-                                        <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-primary rounded-br-2xl"></div>
-                                    </div>
-                                </div>
-                                <div className="absolute bottom-10 left-0 right-0 flex justify-center pointer-events-none">
-                                    <p className="text-white text-[10px] font-black tracking-[0.3em] bg-midnight/40 px-6 py-3 rounded-full backdrop-blur-md border border-white/10 uppercase">Scanning QR Code</p>
-                                </div>
-
-                                <div className="absolute top-8 right-8 z-20">
-                                    <button 
-                                        onClick={triggerFileUpload}
-                                        className="w-14 h-14 bg-white/10 text-white rounded-[20px] flex items-center justify-center backdrop-blur-md border border-white/20 active:scale-95 transition-all shadow-xl"
-                                    >
-                                        <span className="text-2xl">🖼️</span>
-                                    </button>
-                                </div>
-                            </>
-                        ) : (
-                            <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 space-y-5">
-                                <div className="w-14 h-14 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-                                <span className="text-[10px] font-black uppercase tracking-widest">Initializing Camera...</span>
-                            </div>
-                        )}
-                     </div>
-                     
-                     <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        accept="image/*" 
-                        className="hidden" 
-                        onChange={handleFileUpload} 
-                     />
-                     
-                     {!cameraError && (
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center leading-relaxed">Center the QR code in the frame<br/>or upload a photo from gallery</p>
-                     )}
-                  </div>
-              )}
-
-              {loading && !result && (
-                  <div className="flex flex-col items-center justify-center py-24 space-y-6">
-                      <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin shadow-xl shadow-primary/10"></div>
-                      <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">Verifying Records...</p>
-                  </div>
-              )}
-
-              {result && (
-                 <div className="px-4 animate-slideUp">
-                    <div className="bg-white p-10 rounded-[48px] shadow-2xl shadow-indigo-900/10 border-2 border-indigo-50 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 bg-primary text-white text-[9px] font-black px-6 py-3 rounded-bl-[32px] uppercase tracking-[0.2em] shadow-lg">
-                            {result.status.replace('_', ' ')}
-                        </div>
-                        
-                        <div className="text-center mb-10 pt-8">
-                            <div className="w-24 h-24 bg-tech-success text-white rounded-full flex items-center justify-center text-4xl mx-auto shadow-2xl shadow-emerald-500/20 mb-6 animate-popIn border-4 border-white">
-                                ✓
-                            </div>
-                            <h2 className="text-xl font-black text-midnight uppercase tracking-tight">Booking Found</h2>
-                            <p className="text-[11px] font-black text-slate-400 mt-2 uppercase tracking-widest">ID: {result.bookingId}</p>
-                        </div>
-
-                        <div className="space-y-5 bg-slate-50 p-8 rounded-[36px] border border-slate-100/50">
-                            <div>
-                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2.5 opacity-60">EVENT</p>
-                                <p className="text-xs font-black text-midnight uppercase tracking-tight leading-relaxed">{result.event}</p>
-                            </div>
-                            <div className="flex justify-between items-end">
-                                <div>
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2.5 opacity-60">MODEL</p>
-                                    <p className="text-xs font-black text-midnight uppercase tracking-tight">{result.model}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2.5 opacity-60">UNIT</p>
-                                    <p className="text-2xl font-black text-primary tracking-tighter uppercase">UNIT-{result.unit}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button 
-                          onClick={resetSearch}
-                          className="w-full mt-10 py-5 bg-slate-50 text-slate-400 rounded-[28px] font-black text-[11px] uppercase tracking-widest hover:bg-slate-100 transition-all active:scale-95 border border-slate-100"
-                        >
-                          Search Another
-                        </button>
-                    </div>
-                 </div>
-              )}
-          </div>
-      )}
-
-      {viewMode === 'EVENTS' && (
-          <div className="px-4 pb-4">
-              <div className="grid grid-cols-3 gap-4">
-                    {EVENTS.map((ev, idx) => (
-                        <div 
-                            key={ev.id}
-                            onClick={() => setSelectedEvent(ev)}
-                            className="group flex flex-col bg-white rounded-[24px] overflow-hidden shadow-sm border border-slate-100 transition-all h-full cursor-pointer hover:shadow-xl hover:shadow-indigo-900/5 active:scale-95 hover:-translate-y-1.5 animate-slideUp"
-                            style={{ animationDelay: `${idx * 0.05}s` }}
-                        >
-                            <div className="aspect-[2/3] w-full relative overflow-hidden bg-slate-50">
-                                <img 
-                                    src={ev.image} 
-                                    alt={ev.name} 
-                                    className={`w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110 ${ev.soldOut ? 'grayscale contrast-75' : ''}`} 
-                                />
-
-                                {ev.soldOut && (
-                                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-midnight/70 backdrop-blur-[2px]">
-                                        <div className="bg-tech-error text-white font-black text-[8px] px-3 py-1.5 -rotate-12 border border-white/30 shadow-2xl tracking-widest uppercase whitespace-nowrap">
-                                            SOLD OUT
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="p-4 flex flex-col flex-grow bg-white relative">
-                                <h3 className="font-black text-[10px] leading-[1.5] text-midnight line-clamp-2 mb-4 h-[30px] uppercase tracking-tight">
-                                    {ev.name}
-                                </h3>
-                                <div className="flex items-center mt-auto pt-3 border-t border-slate-50">
-                                    <span className="text-[10px] mr-2 opacity-30">📅</span>
-                                    <p className="text-[8px] text-slate-400 font-black line-clamp-1 uppercase tracking-tighter">
-                                        {ev.date.split(' 25')[0] || ev.date.substring(0, 10)}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+            </div>
+            <div className="p-2.5">
+              <h4 className="text-[8px] font-black text-midnight uppercase tracking-tight line-clamp-2 leading-tight mb-1.5">
+                {event.name}
+              </h4>
+              <div className="flex items-center space-x-1 text-slate-400">
+                <Calendar className="w-2 h-2" />
+                <span className="text-[6px] font-bold uppercase tracking-widest">{event.date.split(' ').slice(0, 2).join(' ')}</span>
               </div>
-              <p className="text-center text-[10px] font-black text-slate-300 mt-12 uppercase tracking-[0.3em] opacity-60">
-                 Tap to view real-time availability
-              </p>
-          </div>
-      )}
+            </div>
+          </button>
+        ))}
+      </div>
+    );
+  };
 
-      <style>{`
-        @keyframes scanLine {
-            0% { top: 0%; opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { top: 100%; opacity: 0; }
-        }
-        .animate-scanLine {
-            animation: scanLine 2s linear infinite;
-        }
-      `}</style>
+  const renderEventDetail = () => {
+    const event = getSelectedEvent();
+    if (!event) return null;
+
+    return (
+      <div className="animate-fadeIn space-y-8">
+        {/* Event Banner */}
+        <div className="bg-white p-6 rounded-[40px] shadow-xl shadow-indigo-900/5 border border-slate-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-black text-midnight uppercase tracking-tight leading-tight mb-1">
+              {event.name}
+            </h3>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+              {event.date} 17.00
+            </p>
+          </div>
+          <button 
+            onClick={() => setSelectedEventId(null)}
+            className="text-[10px] font-black text-indigo-600 uppercase tracking-widest border-b-2 border-indigo-600/20 pb-1"
+          >
+            CHANGE EVENT
+          </button>
+        </div>
+
+        {/* Device Categories */}
+        <div className="space-y-10">
+          {mockDeviceCategories.map((category, catIdx) => (
+            <div key={catIdx} className="space-y-6">
+              <div className="flex items-center space-x-4 ml-2">
+                <div className="w-10 h-10 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-xl">
+                  {category.icon}
+                </div>
+                <h4 className="text-[11px] font-black text-midnight uppercase tracking-[0.2em]">
+                  {category.name}
+                </h4>
+              </div>
+
+              <div className="grid grid-cols-4 gap-3">
+                {category.units.map((unit) => (
+                  <div 
+                    key={unit.id}
+                    className={`aspect-[3/4] rounded-[32px] p-3 flex flex-col items-center justify-center text-center border-2 transition-all ${
+                      unit.status === 'BOOKED' ? 'bg-indigo-50/50 border-indigo-100' :
+                      unit.status === 'IN_USE' ? 'bg-slate-50 border-slate-100' :
+                      'bg-emerald-50/30 border-emerald-100'
+                    }`}
+                  >
+                    <span className={`text-[8px] font-black uppercase tracking-widest mb-2 ${
+                      unit.status === 'BOOKED' ? 'text-indigo-600' :
+                      unit.status === 'IN_USE' ? 'text-slate-400' :
+                      'text-emerald-500'
+                    }`}>
+                      {unit.status}
+                    </span>
+                    <p className="text-[9px] font-black text-midnight uppercase mb-3">{unit.unitNo}</p>
+                    
+                    {unit.status === 'BOOKED' ? (
+                      <div className="flex flex-col items-center">
+                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm mb-1">
+                          <Users className="w-4 h-4 text-indigo-600" />
+                        </div>
+                        <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{unit.bookedBy}</span>
+                      </div>
+                    ) : unit.status === 'IN_USE' ? (
+                      <div className="w-8 h-8 bg-white/50 rounded-full flex items-center justify-center">
+                        <div className="w-4 h-0.5 bg-slate-300 rounded-full" />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
+                        <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="animate-fadeIn space-y-8 pb-10">
+      <div className="flex flex-col space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-black text-midnight tracking-tight uppercase">
+              {activeTab === 'TICKETS' ? 'MY TICKETS' : 'CHECK QUEUE'}
+            </h2>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+              {activeTab === 'TICKETS' ? 'YOUR ACTIVE RENTAL RECORDS' : 'REAL-TIME DEVICE AVAILABILITY'}
+            </p>
+          </div>
+          <button 
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+            className={`w-12 h-12 rounded-2xl shadow-xl shadow-indigo-900/5 border border-slate-100 flex items-center justify-center transition-all ${isSearchOpen ? 'bg-indigo-600 text-white' : 'bg-white text-indigo-600'}`}
+          >
+            <Search className="w-6 h-6" />
+          </button>
+        </div>
+
+        {isSearchOpen && (
+          <div className="animate-fadeIn relative">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+            <input 
+              type="text"
+              placeholder={activeTab === 'TICKETS' ? "ค้นหารหัสการจอง..." : "ค้นหาอีเวนต์..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-6 py-4 bg-white border border-slate-100 rounded-2xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-lg shadow-indigo-900/5 transition-all"
+              autoFocus
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white p-2 rounded-[32px] shadow-xl shadow-indigo-900/5 border border-slate-100 flex">
+        <button 
+          onClick={() => { setActiveTab('TICKETS'); setSelectedEventId(null); }}
+          className={`flex-1 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+            activeTab === 'TICKETS' ? 'bg-midnight text-white shadow-lg shadow-midnight/20' : 'text-slate-400'
+          }`}
+        >
+          TICKETS
+        </button>
+        <button 
+          onClick={() => setActiveTab('EVENTS')}
+          className={`flex-1 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+            activeTab === 'EVENTS' ? 'bg-midnight text-white shadow-lg shadow-midnight/20' : 'text-slate-400'
+          }`}
+        >
+          EVENTS
+        </button>
+      </div>
+
+      {activeTab === 'TICKETS' ? renderMyTickets() : renderEventsTab()}
     </div>
   );
 };

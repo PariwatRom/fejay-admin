@@ -83,7 +83,9 @@ export const apiCreateBooking = async (req: BookingRequest): Promise<BookingResp
         status: 'PENDING_PAYMENT',
         event: event?.name || '',
         model: model?.name || '',
-        unit: req.unitId
+        unit: req.unitId,
+        nickname: req.nickname,
+        phone: req.phone
       };
 
       mockBookings.push(newBooking);

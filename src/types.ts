@@ -1,24 +1,40 @@
 export enum AppView {
+  // User Portal
+  USER_BOOKING = 'USER_BOOKING',
+  USER_QUEUE = 'USER_QUEUE',
+  
+  // Shared Booking Flow
   EVENTS = 'EVENTS',
   MODELS = 'MODELS',
-  UNITS = 'UNITS',
   SUMMARY = 'SUMMARY',
   CUSTOMER_FORM = 'CUSTOMER_FORM',
   PAYMENT = 'PAYMENT',
   SUCCESS = 'SUCCESS',
-  CHECK_QUEUE = 'CHECK_QUEUE',
-  QUEUE_RESULT = 'QUEUE_RESULT',
-  QUEUE_DETAIL = 'QUEUE_DETAIL',
-  DEVICES = 'DEVICES',
-  LOGIN = 'LOGIN',
-  ADMIN_DASHBOARD = 'ADMIN_DASHBOARD',
+  
+  // Staff Portal
   STAFF_DASHBOARD = 'STAFF_DASHBOARD',
-  PROFILE = 'PROFILE'
+  
+  // Admin Portal
+  ADMIN_DASHBOARD = 'ADMIN_DASHBOARD',
+  ADMIN_EVENTS = 'ADMIN_EVENTS',
+  ADMIN_SETTINGS = 'ADMIN_SETTINGS',
+  
+  // Finance Portal (Legacy/Extra)
+  FINANCE_DASHBOARD = 'FINANCE_DASHBOARD',
+  
+  // Auth & Profile
+  LOGIN = 'LOGIN',
+  SIGNUP = 'SIGNUP',
+  PROFILE = 'PROFILE',
+  
+  // Legacy
+  CHECK_QUEUE = 'CHECK_QUEUE'
 }
 
 export enum UserRole {
   ADMIN = 'ADMIN',
   STAFF = 'STAFF',
+  FINANCE = 'FINANCE',
   USER = 'USER'
 }
 
@@ -113,23 +129,6 @@ export interface BookingResponse {
   event: string;
   model: string;
   unit: string;
-}
-
-export interface Booking {
-  id: string;
-  firstName: string;
-  lastName: string;
-  nickname: string;
-  phone: string;
-  deviceSku: string;
-  deviceName: string;
-  deviceNo: string;
-  eventId: string;
-  eventName: string;
-  paidAmount: number;
-  totalAmount: number;
-  status: string;
-  paymentStatus: string;
-  timestamp: string;
-  staffName: string;
+  nickname?: string;
+  phone?: string;
 }

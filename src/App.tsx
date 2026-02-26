@@ -16,10 +16,12 @@ import CheckQueue from './pages/CheckQueue';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import StaffDashboard from './pages/StaffDashboard';
+import FinanceDashboard from './pages/FinanceDashboard';
 import Profile from './pages/Profile';
+import Signup from './pages/Signup';
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<AppView>(AppView.EVENTS);
+  const [currentView, setCurrentView] = useState<AppView>(AppView.LOGIN);
   const [history, setHistory] = useState<AppView[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -28,12 +30,59 @@ const App: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([
     {
       id: '1',
-      name: 'FEJAY TECH GRAND OPENING',
-      location: 'Siam Paragon',
-      date: '2024-03-01',
-      image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=400',
+      name: '[FRI] RISER CONCERT : THE...',
+      location: 'Impact Arena',
+      date: 'ศุกร์ 13 กุมภาพันธ์ 2569',
+      image: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&q=80&w=600',
       stock: { s24u: 20, i15pm: 20 },
-      booked: { s24u: 5, i15pm: 8 }
+      booked: { s24u: 20, i15pm: 20 },
+      soldOut: true
+    },
+    {
+      id: '2',
+      name: 'SMTOWN LIVE 2025-26 in BANGKOK',
+      location: 'Rajamangala Stadium',
+      date: 'เสาร์ 14 กุมภาพันธ์ 2569',
+      image: 'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&q=80&w=600',
+      stock: { s24u: 50, i15pm: 50 },
+      booked: { s24u: 10, i15pm: 15 }
+    },
+    {
+      id: '3',
+      name: '[SAT] RISER CONCERT : THE...',
+      location: 'Impact Arena',
+      date: 'เสาร์ 14 กุมภาพันธ์ 2569',
+      image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=600',
+      stock: { s24u: 20, i15pm: 20 },
+      booked: { s24u: 5, i15pm: 2 }
+    },
+    {
+      id: '4',
+      name: '[SAT] 2026 G-DRAGON FAM...',
+      location: 'Thunder Dome',
+      date: 'เสาร์ 21 กุมภาพันธ์ 2569',
+      image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=600',
+      stock: { s24u: 30, i15pm: 30 },
+      booked: { s24u: 30, i15pm: 30 },
+      soldOut: true
+    },
+    {
+      id: '5',
+      name: '[SUN] 2026 G-DRAGON FAM...',
+      location: 'Thunder Dome',
+      date: 'อาทิตย์ 22 กุมภาพันธ์ 2569',
+      image: 'https://images.unsplash.com/photo-1514525253361-bee8718a7439?auto=format&fit=crop&q=80&w=600',
+      stock: { s24u: 30, i15pm: 30 },
+      booked: { s24u: 12, i15pm: 8 }
+    },
+    {
+      id: '6',
+      name: '[SAT] MARK TUAN...',
+      location: 'Impact Exhibition Hall',
+      date: 'เสาร์ 28 กุมภาพันธ์ 2569',
+      image: 'https://images.unsplash.com/photo-1459749411177-042180ce673c?auto=format&fit=crop&q=80&w=600',
+      stock: { s24u: 40, i15pm: 40 },
+      booked: { s24u: 5, i15pm: 5 }
     }
   ]);
 
@@ -53,7 +102,22 @@ const App: React.FC = () => {
   useEffect(() => {
     const savedUser = sessionStorage.getItem('fejay_user');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      const parsedUser = JSON.parse(savedUser);
+      setUser(parsedUser);
+      // If logged in, go to their dashboard
+      if (parsedUser.role === UserRole.ADMIN) {
+        setCurrentView(AppView.ADMIN_DASHBOARD);
+      } else if (parsedUser.role === UserRole.STAFF) {
+        setCurrentView(AppView.STAFF_DASHBOARD);
+      } else if (parsedUser.role === UserRole.FINANCE) {
+        setCurrentView(AppView.FINANCE_DASHBOARD);
+      } else if (parsedUser.role === UserRole.USER) {
+        setCurrentView(AppView.EVENTS);
+      } else {
+        setCurrentView(AppView.EVENTS);
+      }
+    } else {
+      setCurrentView(AppView.LOGIN);
     }
   }, []);
 
@@ -80,7 +144,7 @@ const App: React.FC = () => {
       setHistory(prev => prev.slice(0, -1));
       setCurrentView(prev);
     } else {
-      setCurrentView(AppView.EVENTS);
+      setCurrentView(user ? AppView.EVENTS : AppView.LOGIN);
     }
   };
 
@@ -90,16 +154,27 @@ const App: React.FC = () => {
     addToast(`Welcome back, ${loggedInUser.displayName}`);
     if (loggedInUser.role === UserRole.ADMIN) {
       navigateTo(AppView.ADMIN_DASHBOARD);
-    } else {
+    } else if (loggedInUser.role === UserRole.STAFF) {
       navigateTo(AppView.STAFF_DASHBOARD);
+    } else if (loggedInUser.role === UserRole.FINANCE) {
+      navigateTo(AppView.FINANCE_DASHBOARD);
+    } else if (loggedInUser.role === UserRole.USER) {
+      navigateTo(AppView.EVENTS);
+    } else {
+      navigateTo(AppView.EVENTS);
     }
+  };
+
+  const handleSignup = (role: UserRole) => {
+    addToast('Account created! Please log in.');
+    navigateTo(AppView.LOGIN);
   };
 
   const handleLogout = () => {
     setUser(null);
     sessionStorage.removeItem('fejay_user');
     addToast('Logged out successfully', 'info');
-    navigateTo(AppView.EVENTS);
+    navigateTo(AppView.LOGIN);
   };
 
   const handleUpdateProfile = (updatedUser: User) => {
@@ -188,6 +263,10 @@ const App: React.FC = () => {
   // --- Render ---
 
   const renderView = () => {
+    if (!user && currentView !== AppView.LOGIN && currentView !== AppView.SIGNUP) {
+      return <Login onLogin={handleLogin} onGoToSignup={() => navigateTo(AppView.SIGNUP)} />;
+    }
+
     switch (currentView) {
       case AppView.EVENTS:
         return <Events onSelect={handleEventSelect} />;
@@ -224,10 +303,13 @@ const App: React.FC = () => {
         return <Success bookingId={bookingResponse?.bookingId || ''} onFinish={() => navigateTo(AppView.EVENTS)} />;
         
       case AppView.CHECK_QUEUE:
-        return <CheckQueue />;
+        return <CheckQueue bookings={bookings} events={events} />;
 
       case AppView.LOGIN:
-        return <Login onLogin={handleLogin} />;
+        return <Login onLogin={handleLogin} onGoToSignup={() => navigateTo(AppView.SIGNUP)} />;
+
+      case AppView.SIGNUP:
+        return <Signup onSignup={handleSignup} onBackToLogin={() => navigateTo(AppView.LOGIN)} />;
 
       case AppView.ADMIN_DASHBOARD:
         return user?.role === UserRole.ADMIN ? (
@@ -237,7 +319,7 @@ const App: React.FC = () => {
             bookings={bookings} 
             onCreateEvent={handleCreateEvent} 
           />
-        ) : <Login onLogin={handleLogin} />;
+        ) : <Login onLogin={handleLogin} onGoToSignup={() => navigateTo(AppView.SIGNUP)} />;
 
       case AppView.STAFF_DASHBOARD:
         return user?.role === UserRole.STAFF ? (
@@ -246,10 +328,18 @@ const App: React.FC = () => {
             bookings={bookings} 
             onUpdateBookingStatus={handleUpdateBookingStatus} 
           />
-        ) : <Login onLogin={handleLogin} />;
+        ) : <Login onLogin={handleLogin} onGoToSignup={() => navigateTo(AppView.SIGNUP)} />;
+
+      case AppView.FINANCE_DASHBOARD:
+        return user?.role === UserRole.FINANCE ? (
+          <FinanceDashboard 
+            user={user} 
+            bookings={bookings} 
+          />
+        ) : <Login onLogin={handleLogin} onGoToSignup={() => navigateTo(AppView.SIGNUP)} />;
 
       case AppView.PROFILE:
-        return user ? <Profile user={user} onUpdate={handleUpdateProfile} /> : <Login onLogin={handleLogin} />;
+        return user ? <Profile user={user} onUpdate={handleUpdateProfile} onLogout={handleLogout} /> : <Login onLogin={handleLogin} onGoToSignup={() => navigateTo(AppView.SIGNUP)} />;
         
       default:
         return <Events onSelect={handleEventSelect} />;
@@ -266,26 +356,45 @@ const App: React.FC = () => {
       case AppView.SUCCESS: return "Completed";
       case AppView.CHECK_QUEUE: return "Check Queue";
       case AppView.LOGIN: return "Sign In";
+      case AppView.SIGNUP: return "Join Team";
       case AppView.ADMIN_DASHBOARD: return "Admin Panel";
       case AppView.STAFF_DASHBOARD: return "Staff Panel";
+      case AppView.FINANCE_DASHBOARD: return "Finance Panel";
       case AppView.PROFILE: return "Profile";
       default: return "FEJAY";
     }
   };
 
+  const isWideLayout = user?.role === UserRole.ADMIN && currentView === AppView.ADMIN_DASHBOARD;
+
+  if (currentView === AppView.ADMIN_DASHBOARD && user?.role === UserRole.ADMIN) {
+    return (
+      <div className="min-h-screen bg-[#F3F4F6] font-kanit">
+        <Toast toasts={toasts} onRemove={removeToast} />
+        <AdminDashboard 
+          user={user} 
+          events={events} 
+          bookings={bookings} 
+          onCreateEvent={handleCreateEvent} 
+          onLogout={handleLogout}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen pb-24 max-w-md mx-auto relative bg-tech-bg shadow-2xl overflow-hidden border-x border-slate-100 font-kanit">
+    <div className={`min-h-screen pb-24 mx-auto relative bg-tech-bg shadow-2xl overflow-hidden border-x border-slate-100 font-kanit transition-all duration-500 ${isWideLayout ? 'max-w-none w-full' : 'max-w-md'}`}>
       <Toast toasts={toasts} onRemove={removeToast} />
       <Header 
-        onBack={currentView !== AppView.EVENTS && currentView !== AppView.CHECK_QUEUE && currentView !== AppView.SUCCESS && currentView !== AppView.ADMIN_DASHBOARD && currentView !== AppView.STAFF_DASHBOARD ? goBack : undefined} 
+        onBack={currentView !== AppView.EVENTS && currentView !== AppView.CHECK_QUEUE && currentView !== AppView.SUCCESS && currentView !== AppView.ADMIN_DASHBOARD && currentView !== AppView.STAFF_DASHBOARD && currentView !== AppView.FINANCE_DASHBOARD && currentView !== AppView.LOGIN ? goBack : undefined} 
         title={getHeaderTitle()} 
         onProfileClick={() => navigateTo(AppView.PROFILE)}
         user={user}
       />
-      <main className="px-5 pt-6">
+      <main className={`px-5 pt-6 ${isWideLayout ? 'max-w-7xl mx-auto' : ''}`}>
         {renderView()}
       </main>
-      {currentView !== AppView.SUCCESS && currentView !== AppView.PAYMENT && (
+      {currentView !== AppView.SUCCESS && currentView !== AppView.PAYMENT && currentView !== AppView.LOGIN && currentView !== AppView.SIGNUP && (
         <Navigation 
           currentView={currentView} 
           onNavigate={navigateTo} 

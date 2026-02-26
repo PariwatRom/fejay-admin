@@ -28,7 +28,7 @@ const Models: React.FC<ModelsProps> = ({ event, onSelect }) => {
       {/* Event Info Card - Dark Header Split Layout */}
       <div className="bg-[#15161D] rounded-[32px] shadow-2xl animate-slideUp border border-white/5 relative overflow-hidden flex h-32">
         <div className="w-1/3 relative overflow-hidden">
-            <img src={event.image} alt={event.name} className="w-full h-full object-cover" />
+            <img src={event.image} alt={event.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#15161D]"></div>
         </div>
         <div className="w-2/3 p-4 flex flex-col justify-center relative z-10">
